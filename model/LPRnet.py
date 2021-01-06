@@ -12,16 +12,16 @@ VALIDATE_EPOCHS = 10
 BATCH_SIZE = 64
 BATCH_PER_EPOCH = 50
 
-TRAIN_DIR = 'train'
-VAL_DIR = 'valid'
-TEST_DIR = 'test'
+TRAIN_DIR = '/content/drive/Shareddrives/ANPR_datasets/ocr/lprnet/training'
+VAL_DIR = '/content/drive/Shareddrives/ANPR_datasets/ocr/lprnet/validation'
+TEST_DIR = '/content/drive/Shareddrives/ANPR_datasets/ocr/lprnet/test'
 
 CHECKPOINT_DIR = './checkpoint'
 
-IMG_SIZE = [94, 24]
+IMG_SIZE = [227, 65]
 CH_NUM = 3
 
-CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789" # exclude I, O
+CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
 CHARS_DICT = {char:i for i, char in enumerate(CHARS)}
 DECODE_DICT = {i:char for i, char in enumerate(CHARS)}
 
