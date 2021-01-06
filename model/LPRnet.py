@@ -16,9 +16,9 @@ TRAIN_DIR = '/content/drive/Shareddrives/ANPR_datasets/ocr/lprnet/training'
 VAL_DIR = '/content/drive/Shareddrives/ANPR_datasets/ocr/lprnet/validation'
 TEST_DIR = '/content/drive/Shareddrives/ANPR_datasets/ocr/lprnet/test'
 
-CHECKPOINT_DIR = './checkpoint'
+CHECKPOINT_DIR = '/content/drive/Shareddrives/ANPR_datasets/ocr/lprnet/checkpoint'
 
-IMG_SIZE = [227, 65]
+IMG_SIZE = [128, 27]
 CH_NUM = 3
 
 CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
