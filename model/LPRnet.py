@@ -92,6 +92,9 @@ class LPRnet:
         decoded, log_prob = tf.nn.ctc_beam_search_decoder(logits, seq_len, merge_repeated=False)
 
         self.dense_decoded = tf.sparse_tensor_to_dense(decoded[0], default_value=-1, name='decoded')
+        # A float matrix [batch_size, top_paths] containing sequence log-probabilities.
+
+        self.log_prob = tf.identity(log_prob, name='log_prob')
 
         self.edit_dis = tf.reduce_sum(tf.edit_distance(tf.cast(decoded[0], tf.int32), \
                                                 self.targets, normalize=False))
