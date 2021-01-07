@@ -94,7 +94,9 @@ class LPRnet:
         self.dense_decoded = tf.sparse_tensor_to_dense(decoded[0], default_value=-1, name='decoded')
         # A float matrix [batch_size, top_paths] containing sequence log-probabilities.
 
-        self.probability = tf.identity(tf.math.exp(tf.reshape(log_prob, [cur_batch_size])), name='probability')
+        log_prob_top_result = tf.reshape(log_prob, [cur_batch_size])
+        prob_top_result = tf.math.exp(log_prob_top_result)
+        self.probability = tf.identity(prob_top_result, name='probability')
 
         self.edit_dis = tf.reduce_sum(tf.edit_distance(tf.cast(decoded[0], tf.int32), \
                                                 self.targets, normalize=False))
