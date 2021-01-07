@@ -31,7 +31,7 @@ def infer_single_image(checkpoint, fname):
             return
 
         test_feed = {lprnet.inputs: img_batch}
-        [dense_decode, log_prob] = sess.run([lprnet.dense_decoded, lprnet.log_prob], test_feed)
+        [dense_decode, probability] = sess.run([lprnet.dense_decoded, lprnet.probability], test_feed)
 
         decoded_labels = []
         for item in dense_decode:
@@ -40,7 +40,7 @@ def infer_single_image(checkpoint, fname):
             decoded_labels.append(expression)
 
         for l in decoded_labels:
-            print("Label: " + l + " probability: " + log_prob[0])
+            print("Label: " + l + " probability: " + probability[0])
 
     #cv2.imshow(os.path.basename(fname), img)
     #cv2.waitKey(0)
@@ -168,26 +168,27 @@ def test(checkpoint):
         inference(sess, lprnet, test_gen)
 
 def export(checkpoint, path):
+    lprnet = LPRnet(is_train=False)
     with tf.Session() as sess:
         sess.run(lprnet.init)
-    saver = tf.train.Saver(tf.global_variables(), max_to_keep=30)
-    saver.restore(sess, checkpoint)
-    builder = tf.saved_model.builder.SavedModelBuilder(path)
-    freezing_graph = sess.graph
-    builder.add_meta_graph_and_variables(
-        sess,
-        ["serve"],
-        signature_def_map={
-            'serving_default': tf.saved_model.signature_def_utils.predict_signature_def(
-                {'input': freezing_graph.get_tensor_by_name('inputs:0')},
-                {
-                    'decoded': freezing_graph.get_tensor_by_name('decoded:0'),
-                    'log_prob': freezing_graph.get_tensor_by_name('log_prob:0')
-                 }
-            ),
-        },
-        clear_devices=True)
-    builder.save()
+        saver = tf.train.Saver(tf.global_variables(), max_to_keep=30)
+        saver.restore(sess, checkpoint)
+        builder = tf.saved_model.builder.SavedModelBuilder(path)
+        freezing_graph = sess.graph
+        builder.add_meta_graph_and_variables(
+            sess,
+            ["serve"],
+            signature_def_map={
+                'serving_default': tf.saved_model.signature_def_utils.predict_signature_def(
+                    {'input': freezing_graph.get_tensor_by_name('inputs:0')},
+                    {
+                        'decoded': freezing_graph.get_tensor_by_name('decoded:0'),
+                        'probability': freezing_graph.get_tensor_by_name('probability:0')
+                     }
+                ),
+            },
+            clear_devices=True)
+        builder.save()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -207,7 +208,7 @@ if __name__ == "__main__":
     if args.mode == 'train':
         train(checkpoint=args.ckpt, runtime_generate=args.runtime)
     elif args.mode == 'export':
-        export(checkpoint=args.ckpt, args.path)
+        export(checkpoint=args.ckpt, path=args.path)
     elif args.mode == 'test':
         if args.img is None:
             test(checkpoint=args.ckpt)
