@@ -40,7 +40,7 @@ def infer_single_image(checkpoint, fname):
             decoded_labels.append(expression)
 
         for l in decoded_labels:
-            print("Label: " + l + " probability: " + probability[0])
+            print("Label: " + l + " probability: " + str(probability[0]))
 
     #cv2.imshow(os.path.basename(fname), img)
     #cv2.waitKey(0)
@@ -167,28 +167,44 @@ def test(checkpoint):
 
         inference(sess, lprnet, test_gen)
 
-def export(checkpoint, path):
+def export(checkpoint, format, path):
     lprnet = LPRnet(is_train=False)
     with tf.Session() as sess:
         sess.run(lprnet.init)
         saver = tf.train.Saver(tf.global_variables(), max_to_keep=30)
         saver.restore(sess, checkpoint)
-        builder = tf.saved_model.builder.SavedModelBuilder(path)
-        freezing_graph = sess.graph
-        builder.add_meta_graph_and_variables(
-            sess,
-            ["serve"],
-            signature_def_map={
-                'serving_default': tf.saved_model.signature_def_utils.predict_signature_def(
-                    {'input': freezing_graph.get_tensor_by_name('inputs:0')},
-                    {
-                        'decoded': freezing_graph.get_tensor_by_name('decoded:0'),
-                        'probability': freezing_graph.get_tensor_by_name('probability:0')
-                     }
-                ),
-            },
-            clear_devices=True)
-        builder.save()
+
+        if (format == "saved_model"):
+            builder = tf.saved_model.builder.SavedModelBuilder(path)
+            freezing_graph = sess.graph
+            builder.add_meta_graph_and_variables(
+                sess,
+                ["serve"],
+                signature_def_map={
+                    'serving_default': tf.saved_model.signature_def_utils.predict_signature_def(
+                        {'input': freezing_graph.get_tensor_by_name('inputs:0')},
+                        {
+                            'decoded': freezing_graph.get_tensor_by_name('decoded:0'),
+                            'probability': freezing_graph.get_tensor_by_name('probability:0')
+                         }
+                    ),
+                },
+                clear_devices=True)
+            builder.save()
+
+        elif (format == "frozen_graph"):
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+            output_graph_def = tf.graph_util.convert_variables_to_constants(
+                sess,
+                sess.graph.as_graph_def(),
+                ['decoded', 'probability'],
+            )
+
+            with tf.gfile.GFile(path + '/frozen_graph.pb', "wb") as outfile:
+                outfile.write(output_graph_def.SerializeToString())
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -200,15 +216,17 @@ if __name__ == "__main__":
                         action='store_true')
     parser.add_argument("--img", help="image fullpath to test",
                         type=str, default=None)
-    parser.add_argument("-p", "--path", help="path for exporting SavedModel",
+    parser.add_argument("-p", "--path", help="path for exporting saved_model/frozen_graph",
                         type=str, default="./saved_model")
+    parser.add_argument("-f", "--format", help="Format for exported model: saved_model/frozen_graph",
+                        type=str, default="saved_model")
 
     args = parser.parse_args()
 
     if args.mode == 'train':
         train(checkpoint=args.ckpt, runtime_generate=args.runtime)
     elif args.mode == 'export':
-        export(checkpoint=args.ckpt, path=args.path)
+        export(checkpoint=args.ckpt, format=args.format, path=args.path)
     elif args.mode == 'test':
         if args.img is None:
             test(checkpoint=args.ckpt)
