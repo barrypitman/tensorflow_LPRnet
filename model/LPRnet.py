@@ -12,11 +12,11 @@ VALIDATE_EPOCHS = 10
 BATCH_SIZE = 64
 BATCH_PER_EPOCH = 50
 
-TRAIN_DIR = '/content/drive/Shareddrives/ANPR_datasets/ocr/lprnet/training'
-VAL_DIR = '/content/drive/Shareddrives/ANPR_datasets/ocr/lprnet/validation'
-TEST_DIR = '/content/drive/Shareddrives/ANPR_datasets/ocr/lprnet/test'
+TRAIN_DIR = 'training'
+VAL_DIR = 'validation'
+TEST_DIR = 'test'
 
-CHECKPOINT_DIR = '/content/drive/Shareddrives/ANPR_datasets/ocr/lprnet/checkpoint'
+CHECKPOINT_DIR = 'checkpoint'
 
 IMG_SIZE = [128, 27]
 CH_NUM = 3

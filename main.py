@@ -182,7 +182,7 @@ def export(checkpoint, format, path):
                 ["serve"],
                 signature_def_map={
                     'serving_default': tf.saved_model.signature_def_utils.predict_signature_def(
-                        {'input': freezing_graph.get_tensor_by_name('inputs:0')},
+                        {'inputs': freezing_graph.get_tensor_by_name('inputs:0')},
                         {
                             'decoded': freezing_graph.get_tensor_by_name('decoded:0'),
                             'probability': freezing_graph.get_tensor_by_name('probability:0')
