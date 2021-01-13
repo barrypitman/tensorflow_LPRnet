@@ -89,7 +89,7 @@ class LPRnet:
         seq_len = tf.fill([cur_batch_size], timesteps)
 
         logits = tf.transpose(logits, (1, 0, 2))
-        decoded, log_prob = tf.nn.ctc_beam_search_decoder(logits, seq_len, beam_width=10, merge_repeated=False)
+        decoded, log_prob = tf.nn.ctc_beam_search_decoder(logits, seq_len, beam_width=5, merge_repeated=False)
 
         self.dense_decoded = tf.sparse_tensor_to_dense(decoded[0], default_value=-1, name='decoded')
         # A float matrix [batch_size, top_paths] containing sequence log-probabilities.
