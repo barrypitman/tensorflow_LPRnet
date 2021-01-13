@@ -18,8 +18,8 @@ TEST_DIR = 'test'
 
 CHECKPOINT_DIR = 'checkpoint'
 
-IMG_SIZE = [128, 27]
-CH_NUM = 3
+IMG_SIZE = [94, 24]
+CH_NUM = 1
 
 CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
 CHARS_DICT = {char:i for i, char in enumerate(CHARS)}

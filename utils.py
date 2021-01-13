@@ -76,9 +76,13 @@ class DataIterator:
         for i in range(batch_size):
             sample_ind = self.next_sample_ind()
             fname = self.filenames[sample_ind]
-            img = cv2.imread(os.path.join(self.img_dir, fname))
+            if self.channel_num == 1:
+                img = cv2.imread(os.path.join(self.img_dir, fname), cv2.IMREAD_GRAYSCALE)
+                img = np.expand_dims(img, axis=2)
+            else:
+                img = cv2.imread(os.path.join(self.img_dir, fname))
             #img = data_augmentation(img)
-            img = cv2.resize(img, (self.img_w, self.img_h))
+            #img = cv2.resize(img, (self.img_w, self.img_h))
             images[i] = img
 
             labels.append(self.labels[sample_ind])
@@ -105,8 +109,12 @@ class DataIterator:
 
             for j, i in enumerate(range(start, end)):
                 fname = self.filenames[i]
-                img = cv2.imread(os.path.join(self.img_dir, fname))
-                img = cv2.resize(img, (self.img_w, self.img_h))
+                if self.channel_num == 1:
+                    img = cv2.imread(os.path.join(self.img_dir, fname), cv2.IMREAD_GRAYSCALE)
+                    img = np.expand_dims(img, axis=2)
+                else:
+                    img = cv2.imread(os.path.join(self.img_dir, fname))
+
                 images[j, ...] = img
 
             labels = self.labels[start:end, ...]
