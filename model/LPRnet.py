@@ -21,7 +21,7 @@ CHECKPOINT_DIR = 'checkpoint'
 IMG_SIZE = [94, 24]
 CH_NUM = 1
 
-CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
+CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 CHARS_DICT = {char:i for i, char in enumerate(CHARS)}
 DECODE_DICT = {i:char for i, char in enumerate(CHARS)}
 
@@ -34,35 +34,36 @@ def small_basic_block(inputdata, out_channel, name=None):
         relu1 = tf.nn.relu(conv1)
 
         conv2 = conv2d(relu1, out_div4, ksize=[1,3], name='conv2')
-        relu2 = tf.nn.relu(conv2)
+        conv2_pad = tf.pad(conv2, paddings=((0, 0), (0, 0), (1, 1), (0, 0)), mode='CONSTANT', constant_values=0, name='conv2_pad')
+        relu2 = tf.nn.relu(conv2_pad)
 
         conv3 = conv2d(relu2, out_div4, ksize=[3,1], name='conv3')
-        relu3 = tf.nn.relu(conv3)
+        conv3_pad = tf.pad(conv3, paddings=((0, 0), (1, 1), (0, 0), (0, 0)), mode='CONSTANT', constant_values=0, name='conv3_pad')
+        relu3 = tf.nn.relu(conv3_pad)
 
         conv4 = conv2d(relu3, out_channel, ksize=[1,1], name='conv4')
         bn = tf.layers.batch_normalization(conv4)
         relu = tf.nn.relu(bn)
     return relu
 
-def conv2d(inputdata, out_channel,ksize,stride=[1,1,1,1],pad = 'SAME', name=None):
+def conv2d(inputdata, out_channel,ksize,stride=[1,1],pad = 'VALID', name=None):
 
     with tf.variable_scope(name):
         in_channel = inputdata.get_shape().as_list()[3]
         filter_shape = [ksize[0], ksize[1], in_channel, out_channel]
         weights = tf.get_variable('w', filter_shape, dtype=tf.float32, initializer=tf.glorot_uniform_initializer())
-        biases = tf.get_variable('b', [out_channel], dtype=tf.float32, initializer=tf.constant_initializer())
+        # biases = tf.get_variable('b', [out_channel], dtype=tf.float32, initializer=tf.constant_initializer())
         conv = tf.nn.conv2d(inputdata, weights,
                             strides=stride,
                             padding=pad)
-        add_bias = tf.nn.bias_add(conv, biases)
-    return add_bias
+        # add_bias = tf.nn.bias_add(conv, biases)
+    return conv
 
 def global_context(inputdata, ksize, strides, name=None):
     with tf.variable_scope(name):
-        avg_pool = tf.nn.avg_pool(inputdata,
+        avg_pool = tf.nn.avg_pool2d(inputdata,
                            ksize=ksize,
-                           strides=strides,
-                           padding='SAME')
+                           strides=strides, padding="VALID")
         sqm = tf.reduce_mean(tf.square(avg_pool))
         out = tf.div(avg_pool, sqm)
     return out
@@ -126,23 +127,25 @@ class LPRnet:
         ## back-bone
         conv1 = conv2d(inputs, 64, ksize=[3,3], name='conv1')
         conv1_bn = tf.layers.batch_normalization(conv1)
-        conv1_relu = tf.nn.relu(conv1_bn)
-        max1 = tf.nn.max_pool(conv1_relu,
-                              ksize=[1, 3, 3, 1],
-                              strides=[1, 1, 1, 1],
-                              padding='SAME')
+        conv1_relu = tf.nn.relu(conv1_bn, name='conv1_relu')
+        max1 = tf.nn.max_pool2d(conv1_relu,
+                              ksize=[3, 3],
+                              strides=1,
+                              padding='VALID')
         sbb1 = small_basic_block(max1, 128, name='sbb1')
-        max2 = tf.nn.max_pool(sbb1,
-                              ksize=[1, 3, 3, 1],
-                              strides=[1, 1, 2, 1],
-                              padding='SAME')
+
+        max2 = tf.nn.max_pool2d(sbb1,
+                              ksize=[3, 3],
+                              strides=[1, 2],
+                              padding='VALID')
 
         sbb2 = small_basic_block(max2, 256, name='sbb2')
         sbb3 = small_basic_block(sbb2, 256, name='sbb3')
-        max3 = tf.nn.max_pool(sbb3,
-                           ksize=[1, 3, 3, 1],
-                           strides=[1, 1, 2, 1],
-                           padding='SAME')
+
+        max3 = tf.nn.max_pool2d(sbb3,
+                           ksize=[3, 3],
+                           strides=[1, 2],
+                           padding='VALID')
 
         dropout1 = tf.layers.dropout(max3, training=is_train)
 
@@ -157,33 +160,33 @@ class LPRnet:
         conv3_relu = tf.nn.relu(conv3_bn)
 
         ## global context
-        scale1 = global_context(conv1,
-                             ksize=[1, 1, 4, 1],
-                             strides=[1, 1, 4, 1],
+        scale1 = global_context(conv1_relu,
+                             ksize=[5, 5],
+                             strides=[5, 5],
                              name='gc1')
 
         scale2 = global_context(sbb1,
-                             ksize=[1, 1, 4, 1],
-                             strides=[1, 1, 4, 1],
+                             ksize=[5, 5],
+                             strides=[5, 5],
                              name='gc2')
 
         scale3 = global_context(sbb3,
-                             ksize=[1, 1, 2, 1],
-                             strides=[1, 1, 2, 1],
+                             ksize=[4, 10],
+                             strides=[4, 2],
                              name = 'gc3')
 
         sqm = tf.reduce_mean(tf.square(conv3_relu))
         scale4 = tf.div(conv3_relu, sqm)
 
-        #print(scale1.get_shape().as_list())
-        #print(scale2.get_shape().as_list())
-        #print(scale3.get_shape().as_list())
-        #print(scale4.get_shape().as_list())
+        # print(scale1.get_shape().as_list())
+        # print(scale2.get_shape().as_list())
+        # print(scale3.get_shape().as_list())
+        # print(scale4.get_shape().as_list())
 
         gc_concat = tf.concat([scale1, scale2, scale3, scale4], 3)
         conv_out = conv2d(gc_concat, NUM_CLASS, ksize=(1, 1), name='conv_out')
 
         logits = tf.reduce_mean(conv_out, axis=1)
-        #print(logits.get_shape().as_list())
+        # print(logits.get_shape().as_list())
 
         return logits
