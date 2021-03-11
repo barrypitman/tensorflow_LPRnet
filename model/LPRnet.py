@@ -149,6 +149,8 @@ class LPRnet:
 
         dropout1 = tf.layers.dropout(max3, training=is_train)
 
+        #print('dropout1')
+        #print(dropout1.get_shape().as_list()) # [None, 1, 10, 256] with2x2 and [None, 16, 21, 256] by default
         conv2 = conv2d(dropout1, 256, ksize=[1, 4], name='conv_d1')
         conv2_bn = tf.layers.batch_normalization(conv2)
         conv2_relu = tf.nn.relu(conv2_bn)

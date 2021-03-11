@@ -50,7 +50,7 @@ class DataIterator:
         fs = os.listdir(self.img_dir)
         for filename in fs:
             self.filenames.append(filename)
-            label = filename.split('.')[0] # format: [label].jpg
+            label = filename.split('.')[0].split('_')[0] # format: [label]_[random number].jpg
             label = encode_label(label, model.CHARS_DICT)
             self.labels.append(label)
         self.sample_num = len(self.labels)
